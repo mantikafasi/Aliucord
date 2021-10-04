@@ -25,9 +25,7 @@ import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import dalvik.system.BaseDexClassLoader;
-import top.canyie.pine.Pine;
-import top.canyie.pine.PineConfig;
-import top.canyie.pine.callback.MethodHook;
+import de.robv.android.xposed.*;
 
 public final class Injector {
     public static final String LOG_TAG = "Aliucord Injector";
@@ -35,23 +33,18 @@ public final class Injector {
     private static final String DEX_URL = "https://raw.githubusercontent.com/Aliucord/Aliucord/builds/Aliucord.zip";
     private static final File BASE_DIRECTORY = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "Aliucord");
 
-    private static MethodHook.Unhook unhook;
+    private static XC_MethodHook.Unhook unhook;
 
     public static void init() {
-        PineConfig.debug = new File(BASE_DIRECTORY, ".pine_debug").exists();
-        PineConfig.debuggable = new File(BASE_DIRECTORY, ".debuggable").exists();
-        Log.d(LOG_TAG, "Debuggable: " + PineConfig.debuggable);
-        PineConfig.disableHiddenApiPolicy = false;
-        PineConfig.disableHiddenApiPolicyForPlatformDomain = false;
-
         try {
             Log.d(LOG_TAG, "Hooking AppActivity.onCreate...");
-            unhook = Pine.hook(AppActivity.class.getDeclaredMethod("onCreate", Bundle.class), new MethodHook() {
+            unhook = DexposedBridge.hookMethod(AppActivity.class.getDeclaredMethod("onCreate", Bundle.class), new XC_MethodHook() {
                 @Override
-                public void beforeCall(Pine.CallFrame callFrame) {
-                    init((AppActivity) callFrame.thisObject);
+                public void beforeHookedMethod(MethodHookParam param) {
+                    Logger.d("Now this is epic");
                     unhook.unhook();
                     unhook = null;
+                    init((AppActivity) param.thisObject);
                 }
             });
         } catch (Throwable th) {

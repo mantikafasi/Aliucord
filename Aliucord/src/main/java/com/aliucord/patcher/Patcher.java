@@ -11,8 +11,8 @@ import com.aliucord.Logger;
 import java.lang.reflect.Member;
 import java.util.*;
 
-import top.canyie.pine.Pine;
-import top.canyie.pine.callback.MethodHook;
+import de.robv.android.xposed.DexposedBridge;
+import de.robv.android.xposed.XC_MethodHook;
 
 public class Patcher {
     public static Logger logger = new Logger("Patcher");
@@ -26,7 +26,7 @@ public class Patcher {
      * @param hook MethodHook
      * @return Unhook function
      */
-    public static Runnable addPatch(String forClass, String methodName, Class<?>[] paramTypes, MethodHook hook) {
+    public static XC_MethodHook.Unhook addPatch(String forClass, String methodName, Class<?>[] paramTypes, XC_MethodHook hook) {
         try {
             return addPatch(cl.loadClass(forClass), methodName, paramTypes, hook);
         } catch (Throwable e) { Patcher.logger.error(e); }
@@ -41,7 +41,7 @@ public class Patcher {
      * @param hook MethodHook
      * @return Unhook function
      */
-    public static Runnable addPatch(Class<?> clazz, String methodName, Class<?>[] paramTypes, MethodHook hook) {
+    public static XC_MethodHook.Unhook addPatch(Class<?> clazz, String methodName, Class<?>[] paramTypes, XC_MethodHook hook) {
         try {
             return addPatch(clazz.getDeclaredMethod(methodName, paramTypes), hook);
         } catch (Throwable e) { Patcher.logger.error(e); }
@@ -54,7 +54,7 @@ public class Patcher {
      * @param hook MethodHook
      * @return Unhook function
      */
-    public static Runnable addPatch(Member member, MethodHook hook) {
-        return Pine.hook(member, hook)::unhook;
+    public static XC_MethodHook.Unhook addPatch(Member member, XC_MethodHook hook) {
+        return DexposedBridge.hookMethod(member, hook);
     }
 }

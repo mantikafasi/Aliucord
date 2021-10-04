@@ -9,15 +9,12 @@ package com.aliucord.coreplugins;
 
 import android.content.Context;
 
-import com.aliucord.CollectionUtils;
 import com.aliucord.entities.Plugin;
-import com.aliucord.patcher.Patcher;
 import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
-import top.canyie.pine.callback.MethodReplacement;
+import de.robv.android.xposed.*;
 
 final class NoTrack extends Plugin {
     @Override
@@ -44,10 +41,9 @@ final class NoTrack extends Plugin {
 
         for (Map.Entry<String, String[]> entry : map.entrySet()) {
             String className = entry.getKey();
-            Method[] methods = cl.loadClass(className).getDeclaredMethods();
+            var clazz = cl.loadClass(className);
             for (String fn : entry.getValue()) {
-                Method m = CollectionUtils.find(Arrays.asList(methods), method -> method.getName().equals(fn));
-                if (m != null) Patcher.addPatch(m, MethodReplacement.DO_NOTHING);
+                DexposedBridge.hookAllMethods(clazz, fn,  XC_MethodReplacement.DO_NOTHING);
             }
         }
     }

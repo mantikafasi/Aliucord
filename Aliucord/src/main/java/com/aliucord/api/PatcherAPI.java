@@ -13,16 +13,17 @@ import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.List;
 
-import top.canyie.pine.callback.MethodHook;
+import de.robv.android.xposed.XC_MethodHook;
+
 
 @SuppressWarnings({"unused"})
 public class PatcherAPI {
     public List<Runnable> unpatches = new ArrayList<>();
 
-    private Runnable createUnpatch(Runnable _unpatch) {
+    private Runnable createUnpatch(XC_MethodHook.Unhook unhook) {
         Runnable unpatch = new Runnable() {
             public void run() {
-                _unpatch.run();
+                unhook.unhook();
                 unpatches.remove(this);
             }
         };
@@ -37,10 +38,10 @@ public class PatcherAPI {
      * @param paramTypes Parameters of the <code>fn</code>. Useful for patching individual overloads.
      * @param hook Callback for the patch.
      * @return A {@link Runnable} object.
-     * @see PinePatchFn
-     * @see PinePrePatchFn
+     * @see Patch
+     * @see PrePatch
      */
-    public Runnable patch(@NonNull String forClass, @NonNull String fn, @NonNull Class<?>[] paramTypes, @NonNull MethodHook hook) {
+    public Runnable patch(@NonNull String forClass, @NonNull String fn, @NonNull Class<?>[] paramTypes, @NonNull XC_MethodHook hook) {
         return createUnpatch(Patcher.addPatch(forClass, fn, paramTypes, hook));
     }
 
@@ -51,10 +52,10 @@ public class PatcherAPI {
      * @param paramTypes Parameters of the <code>fn</code>. Useful for patching individual overloads.
      * @param hook Callback for the patch.
      * @return Method that will remove the patch when invoked
-     * @see PinePatchFn
-     * @see PinePrePatchFn
+     * @see Patch
+     * @see PrePatch
      */
-    public Runnable patch(@NonNull Class<?> clazz, @NonNull String fn, @NonNull Class<?>[] paramTypes, @NonNull MethodHook hook) {
+    public Runnable patch(@NonNull Class<?> clazz, @NonNull String fn, @NonNull Class<?>[] paramTypes, @NonNull XC_MethodHook hook) {
         return createUnpatch(Patcher.addPatch(clazz, fn, paramTypes, hook));
     }
 
@@ -63,12 +64,12 @@ public class PatcherAPI {
      * @param m Method or constructor to patch. see {@link Member}.
      * @param hook Callback for the patch.
      * @return Method that will remove the patch when invoked
-     * @see PatcherAPI#patch(String, String, Class[], MethodHook)
-     * @see PatcherAPI#patch(Class, String, Class[], MethodHook)
-     * @see PinePatchFn
-     * @see PinePrePatchFn
+     * @see PatcherAPI#patch(String, String, Class[], XC_MethodHook)
+     * @see PatcherAPI#patch(Class, String, Class[], XC_MethodHook)
+     * @see Patch
+     * @see PrePatch
      */
-    public Runnable patch(@NonNull Member m, @NonNull MethodHook hook) {
+    public Runnable patch(@NonNull Member m, @NonNull XC_MethodHook hook) {
         return createUnpatch(Patcher.addPatch(m, hook));
     }
 

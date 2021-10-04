@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.ir.backend.js.compile
+
 plugins {
     id("com.android.library")
     id("com.aliucord.gradle")
@@ -34,5 +36,6 @@ android {
 dependencies {
     discord("com.discord:discord:${findProperty("discord_version")}")
     implementation("androidx.appcompat:appcompat:1.3.1")
-    implementation("com.github.Aliucord:pine:83f67b2cdb")
+    implementation("com.github.tiann:epic:0.11.2")
+    implementation(files("../.assets/epic-0.11.2.aar"))
 }

@@ -59,7 +59,8 @@ dependencies {
     api("androidx.constraintlayout:constraintlayout:2.1.1")
 
     discord("com.discord:discord:${findProperty("discord_version")}")
-    api("com.github.Aliucord:pine:83f67b2cdb")
+    api("com.github.tiann:epic:0.11.2")
+    api(files("../.assets/epic-0.11.2.aar"))
 }
 
 tasks.dokkaHtml.configure {
