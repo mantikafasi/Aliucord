@@ -98,7 +98,7 @@ public class Plugins extends SettingsPage {
             ctx = fragment.requireContext();
 
             this.originalData = new ArrayList<>(plugins);
-            originalData.sort(Comparator.comparing(Plugin::getName));
+            Collections.sort(originalData, (p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()));
 
             data = originalData;
         }

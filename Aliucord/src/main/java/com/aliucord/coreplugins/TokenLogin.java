@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
+import androidx.core.content.ContextCompat;
+
 import com.aliucord.Utils;
 import com.aliucord.entities.Plugin;
 import com.aliucord.patcher.Patch;
@@ -86,8 +88,8 @@ final class TokenLogin extends Plugin {
             btn.setText("Login using token");
             btn.setTextSize(16.0f);
             if (StoreStream.getUserSettingsSystem().getTheme().equals("light"))
-                btn.setBackgroundColor(context.getResources().getColor(R.c.uikit_btn_bg_color_selector_secondary_light, null));
-            else btn.setBackgroundColor(context.getResources().getColor(R.c.uikit_btn_bg_color_selector_secondary_dark, null));
+                btn.setBackgroundColor(ContextCompat.getColor(context, R.c.uikit_btn_bg_color_selector_secondary_light));
+            else btn.setBackgroundColor(ContextCompat.getColor(context, R.c.uikit_btn_bg_color_selector_secondary_dark));
             btn.setOnClickListener(e -> Utils.openPage(e.getContext(), Page.class));
             v.addView(btn);
         }));

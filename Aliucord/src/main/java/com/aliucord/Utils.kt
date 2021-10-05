@@ -50,6 +50,7 @@ object Utils {
     lateinit var appActivity: AppActivity
 
     private var mAppContext: Context? = null
+
     @JvmStatic
     val appContext: Context
         get() = mAppContext ?: NotificationClient.`access$getContext$p`(NotificationClient.INSTANCE)
@@ -132,13 +133,12 @@ object Utils {
      * @return ID of the resource, or 0 if not found.
      */
     @JvmStatic
-    fun getResId(name: String, type: String) = resIdCache.computeIfAbsent(name) { k ->
-        appContext.resources.getIdentifier(
-            k,
+    fun getResId(name: String, type: String) =
+        resIdCache[name] ?: appContext.resources.getIdentifier(
+            name,
             type,
             "com.discord"
-        )
-    }
+        ).also { if (it != 0) resIdCache[name] = it }
 
     @JvmStatic
     fun openPage(context: Context, clazz: Class<out AppComponent>, intent: Intent?) =
@@ -189,20 +189,19 @@ object Utils {
         channelTypes: List<Int?> = emptyList(),
         choices: List<CommandChoice> = emptyList(),
         subCommandOptions: List<ApplicationCommandOption> = emptyList(),
-        autocomplete: Boolean = true
+        autocomplete: Boolean = true,
+    ) = ApplicationCommandOption(
+        type,
+        name,
+        description,
+        descriptionRes,
+        required,
+        default,
+        channelTypes,
+        choices,
+        subCommandOptions,
+        autocomplete
     )
-        = ApplicationCommandOption(
-            type,
-            name,
-            description,
-            descriptionRes,
-            required,
-            default,
-            channelTypes,
-            choices,
-            subCommandOptions,
-            autocomplete
-        )
 
     /**
      * Builds Clyde User
@@ -250,7 +249,7 @@ object Utils {
         context: Context,
         type: CheckedSetting.ViewType,
         text: CharSequence?,
-        subtext: CharSequence?
+        subtext: CharSequence?,
     ) = CheckedSetting(context, null).apply {
         if (type != CheckedSetting.ViewType.CHECK) {
             removeAllViews()

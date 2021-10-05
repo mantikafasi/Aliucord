@@ -24,7 +24,7 @@ android {
     compileSdk = 30
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 21
         targetSdk = 30
 
         buildConfigField("String", "GIT_REVISION", "\"${getGitHash()}\"")

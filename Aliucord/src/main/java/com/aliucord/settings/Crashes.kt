@@ -34,6 +34,7 @@ import java.lang.RuntimeException
 import java.util.*
 
 const val autoDisableKey = "autoDisableCrashingPlugins"
+
 private data class CrashLog(val timestamp: String, val stacktrace: String, var times: Int)
 
 private val uniqueId = View.generateViewId()
@@ -43,10 +44,10 @@ class CrashSettings : BottomSheet() {
         super.onViewCreated(view, bundle)
 
         Utils.createCheckedSetting(
-                view.context,
-                CheckedSetting.ViewType.SWITCH,
-                "Auto Disable Plugins",
-                "Automatically disable plugins when they cause a crash"
+            view.context,
+            CheckedSetting.ViewType.SWITCH,
+            "Auto Disable Plugins",
+            "Automatically disable plugins when they cause a crash"
         ).run {
             isChecked = SettingsUtils.getBool(autoDisableKey, true)
             setOnCheckedListener {
@@ -59,9 +60,15 @@ class CrashSettings : BottomSheet() {
 }
 
 class Crashes : SettingsPage() {
-    private fun createToolbarButton(ctx: Context, @DrawableRes drawableId: Int, marginEnd: Int, onClickListener: View.OnClickListener) =
+    private fun createToolbarButton(
+        ctx: Context,
+        @DrawableRes drawableId: Int,
+        marginEnd: Int,
+        onClickListener: View.OnClickListener,
+    ) =
         ToolbarButton(ctx).apply {
-            layoutParams = Toolbar.LayoutParams(Toolbar.LayoutParams.WRAP_CONTENT, Toolbar.LayoutParams.WRAP_CONTENT).apply {
+            layoutParams = Toolbar.LayoutParams(Toolbar.LayoutParams.WRAP_CONTENT,
+                Toolbar.LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.END
                 val m = DimenUtils.getDefaultPadding() / 2
                 setMargins(m, m, m + marginEnd, m)
@@ -152,7 +159,8 @@ class Crashes : SettingsPage() {
                     linearLayout.addView(this)
                 }
                 TextView(context).run {
-                    text = MDUtils.renderCodeBlock(context, SpannableStringBuilder(), null, stacktrace)
+                    text =
+                        MDUtils.renderCodeBlock(context, SpannableStringBuilder(), null, stacktrace)
                     setOnClickListener {
                         Utils.setClipboard("CrashLog-$timestamp", stacktrace)
                         Utils.showToast(it.context, "Copied to clipboard")
@@ -174,13 +182,12 @@ class Crashes : SettingsPage() {
             if (!file.isFile) continue
             val content = file.readText()
             val hashCode = content.hashCode()
-            res.computeIfAbsent(hashCode) {
-                CrashLog(
-                    timestamp = file.name.replace(".txt", "").replace("_".toRegex(), ":"),
-                    stacktrace = content,
-                    times = 0
-                )
-            }.times++
+            val crashLog = res[hashCode] ?: CrashLog(
+                timestamp = file.name.replace(".txt", "").replace("_".toRegex(), ":"),
+                stacktrace = content,
+                times = 0
+            ).also { res[hashCode] = it }
+            crashLog.times++
         }
         return res
     }

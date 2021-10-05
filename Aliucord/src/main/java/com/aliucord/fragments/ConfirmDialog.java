@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+
 import com.aliucord.Utils;
 import com.discord.app.AppDialog;
 import com.discord.databinding.LeaveGuildDialogBinding;
@@ -44,7 +46,7 @@ public class ConfirmDialog extends AppDialog {
         okButton.setText("OK");
         okButton.setIsLoading(false);
         okButton.setOnClickListener(onOkListener != null ? onOkListener : e -> dismiss());
-        if (isDangerous) okButton.setBackgroundColor(view.getResources().getColor(R.c.uikit_btn_bg_color_selector_red, view.getContext().getTheme()));
+        if (isDangerous) okButton.setBackgroundColor(ContextCompat.getColor(view.getContext(), R.c.uikit_btn_bg_color_selector_red));
 
         getCancelButton().setOnClickListener(onCancelListener != null ? onCancelListener : e -> dismiss());
         getHeader().setText(title != null ? title : "Confirm");

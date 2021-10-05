@@ -11,6 +11,8 @@ import android.annotation.SuppressLint;
 import android.view.View;
 import android.widget.*;
 
+import androidx.core.content.ContextCompat;
+
 import com.aliucord.Utils;
 import com.discord.app.AppDialog;
 import com.discord.databinding.WidgetKickUserBinding;
@@ -64,7 +66,7 @@ public class InputDialog extends AppDialog {
         LinearLayout buttonLayout = ((LinearLayout) okButton.getParent());
         // The button has no room to breathe - Discord moment, it doesn't even line up with the input field ~ Whatever, fix that
         buttonLayout.setPadding(buttonLayout.getPaddingLeft(), buttonLayout.getPaddingTop(), buttonLayout.getPaddingRight() * 2, buttonLayout.getPaddingBottom());
-        okButton.setBackgroundColor(view.getResources().getColor(R.c.uikit_btn_bg_color_selector_brand, view.getContext().getTheme()));
+        okButton.setBackgroundColor(ContextCompat.getColor(view.getContext(), R.c.uikit_btn_bg_color_selector_brand));
         okButton.setOnClickListener(onOkListener != null ? onOkListener : e -> dismiss());
 
         getCancelButton().setOnClickListener(onCancelListener != null ? onCancelListener : e -> dismiss());

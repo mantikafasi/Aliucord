@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.widget.NestedScrollView;
@@ -312,7 +313,7 @@ public final class Main {
 
     private static boolean checkPermissions(AppCompatActivity activity) {
         String perm = Manifest.permission.WRITE_EXTERNAL_STORAGE;
-        if (activity.checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED) return true;
+        if (ActivityCompat.checkSelfPermission(activity, perm) == PackageManager.PERMISSION_GRANTED) return true;
         activity.registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
             if (granted == Boolean.TRUE) {
                 loadAllPlugins(activity);
