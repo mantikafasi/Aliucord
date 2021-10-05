@@ -28,7 +28,6 @@ import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import dalvik.system.BaseDexClassLoader;
-import de.robv.android.xposed.*;
 
 public final class Injector {
     public static final String LOG_TAG = "Aliucord Injector";
@@ -54,9 +53,6 @@ public final class Injector {
         Logger.d("Initializing Aliucord...");
         try {
             XposedCompat.cacheDir = appActivity.getCacheDir();
-            XposedCompat.context = appActivity;
-            XposedCompat.classLoader = appActivity.getClassLoader();
-            XposedCompat.isFirstApplication= true;
 
             var dexFile = new File(appActivity.getCodeCacheDir(), "Aliucord.zip");
 

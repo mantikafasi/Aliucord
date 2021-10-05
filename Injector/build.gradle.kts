@@ -38,7 +38,5 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.3.1")
 
     implementation("com.swift.sandhook:hooklib:4.2.0")
-    implementation("com.swift.sandhook:hookannotation:4.2.0")
     implementation("com.swift.sandhook:xposedcompat:4.2.0")
-    implementation("com.jakewharton.android.repackaged:dalvik-dx:11.0.0_r3")
 }
