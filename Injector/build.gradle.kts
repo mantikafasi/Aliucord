@@ -36,6 +36,9 @@ android {
 dependencies {
     discord("com.discord:discord:${findProperty("discord_version")}")
     implementation("androidx.appcompat:appcompat:1.3.1")
-    implementation("com.github.tiann:epic:0.11.2")
-    implementation(files("../.assets/epic-0.11.2.aar"))
+
+    implementation("com.swift.sandhook:hooklib:4.2.0")
+    implementation("com.swift.sandhook:hookannotation:4.2.0")
+    implementation("com.swift.sandhook:xposedcompat:4.2.0")
+    implementation("com.jakewharton.android.repackaged:dalvik-dx:11.0.0_r3")
 }

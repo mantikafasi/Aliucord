@@ -11,8 +11,8 @@ import com.aliucord.Logger;
 import java.lang.reflect.Member;
 import java.util.*;
 
-import de.robv.android.xposed.DexposedBridge;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
 
 public class Patcher {
     public static Logger logger = new Logger("Patcher");
@@ -55,6 +55,6 @@ public class Patcher {
      * @return Unhook function
      */
     public static XC_MethodHook.Unhook addPatch(Member member, XC_MethodHook hook) {
-        return DexposedBridge.hookMethod(member, hook);
+        return XposedBridge.hookMethod(member, hook);
     }
 }

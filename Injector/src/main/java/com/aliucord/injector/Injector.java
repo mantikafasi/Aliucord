@@ -15,6 +15,9 @@ import android.widget.Toast;
 import com.discord.app.AppActivity;
 import com.discord.stores.StoreClientVersion;
 import com.discord.stores.StoreStream;
+import com.swift.sandhook.SandHook;
+import com.swift.sandhook.SandHookConfig;
+import com.swift.sandhook.xposedcompat.XposedCompat;
 
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -33,20 +36,10 @@ public final class Injector {
     private static final String DEX_URL = "https://raw.githubusercontent.com/Aliucord/Aliucord/builds/Aliucord.zip";
     private static final File BASE_DIRECTORY = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), "Aliucord");
 
-    private static XC_MethodHook.Unhook unhook;
-
     public static void init() {
         try {
-            Log.d(LOG_TAG, "Hooking AppActivity.onCreate...");
-            unhook = DexposedBridge.hookMethod(AppActivity.class.getDeclaredMethod("onCreate", Bundle.class), new XC_MethodHook() {
-                @Override
-                public void beforeHookedMethod(MethodHookParam param) {
-                    Logger.d("Now this is epic");
-                    unhook.unhook();
-                    unhook = null;
-                    init((AppActivity) param.thisObject);
-                }
-            });
+            SandHookConfig.DEBUG = new File(BASE_DIRECTORY, ".debuggable").exists();
+            SandHook.addHookClass(Hook.class);
         } catch (Throwable th) {
             Log.e(LOG_TAG, "Failed to initialize Aliucord", th);
         }
@@ -57,9 +50,14 @@ public final class Injector {
         new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show());
     }
 
-    private static void init(AppActivity appActivity) {
+    public static void init(AppActivity appActivity) {
         Logger.d("Initializing Aliucord...");
         try {
+            XposedCompat.cacheDir = appActivity.getCacheDir();
+            XposedCompat.context = appActivity;
+            XposedCompat.classLoader = appActivity.getClassLoader();
+            XposedCompat.isFirstApplication= true;
+
             var dexFile = new File(appActivity.getCodeCacheDir(), "Aliucord.zip");
 
             var prefs = appActivity.getSharedPreferences("aliucord", Context.MODE_PRIVATE);
@@ -118,6 +116,7 @@ public final class Injector {
             preInit.invoke(null, appActivity);
             init.invoke(null, appActivity);
             Logger.d("Finished initializing Aliucord");
+
         } catch (Throwable th) {
             error(appActivity, "Failed to initialize Aliucord :(", th);
             // Delete file so it is reinstalled the next time

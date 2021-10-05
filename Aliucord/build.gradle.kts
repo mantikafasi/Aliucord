@@ -59,8 +59,8 @@ dependencies {
     api("androidx.constraintlayout:constraintlayout:2.1.1")
 
     discord("com.discord:discord:${findProperty("discord_version")}")
-    api("com.github.tiann:epic:0.11.2")
-    api(files("../.assets/epic-0.11.2.aar"))
+    implementation("com.swift.sandhook:hooklib:4.2.0")
+    implementation("com.swift.sandhook:xposedcompat:4.2.0")
 }
 
 tasks.dokkaHtml.configure {

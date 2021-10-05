@@ -43,7 +43,7 @@ final class NoTrack extends Plugin {
             String className = entry.getKey();
             var clazz = cl.loadClass(className);
             for (String fn : entry.getValue()) {
-                DexposedBridge.hookAllMethods(clazz, fn,  XC_MethodReplacement.DO_NOTHING);
+                XposedBridge.hookAllMethods(clazz, fn,  XC_MethodReplacement.DO_NOTHING);
             }
         }
     }

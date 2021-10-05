@@ -169,22 +169,23 @@ public final class MainActivity extends FlutterActivity {
                             zip.closeEntry();
 
                             AssetManager assets = getAssets();
-                            Utils.writeEntry(zip, "classes5.dex", Utils.readBytes(assets.open("epic/classes.dex")));
-                            Utils.writeEntry(zip, "classes6.dex", Utils.readBytes(assets.open("epic/xposedapi.dex")));
-                            Utils.writeEntry(zip, "classes7.dex", Utils.readBytes(assets.open("epic/freereflection.dex")));
+                            Utils.writeEntry(zip, "classes5.dex", Utils.readBytes(assets.open("sandhook/hooklib.dex")));
+                            Utils.writeEntry(zip, "classes6.dex", Utils.readBytes(assets.open("sandhook/nativehook.dex")));
+                            Utils.writeEntry(zip, "classes7.dex", Utils.readBytes(assets.open("sandhook/xposedapi.dex")));
+                            Utils.writeEntry(zip, "classes8.dex", Utils.readBytes(assets.open("sandhook/dalvik-dx.dex")));
+                            Utils.writeEntry(zip, "classes9.dex", Utils.readBytes(assets.open("sandhook/hookannotation.dex")));
+
 
                             zip.openEntry("AndroidManifest.xml");
                             zip.compressFile(getFilesDir().getAbsolutePath() + "/AndroidManifest.xml");
                             zip.closeEntry();
 
-                            Utils.writeEntry(zip, "lib/arm64-v8a/libepic.so", Utils.readBytes(assets.open("epic/arm64-v8a/libepic.so")));
-                            Utils.writeEntry(zip, "lib/armeabi/libdexposed.so", Utils.readBytes(assets.open("epic/armeabi/libdexposed.so")));
-                            Utils.writeEntry(zip, "lib/armeabi-v7a/libepic.so", Utils.readBytes(assets.open("epic/armeabi-v7a/libepic.so")));
-                            Utils.writeEntry(zip, "lib/x86/libepic.so", Utils.readBytes(assets.open("epic/x86/libepic.so")));
-                            Utils.writeEntry(zip, "lib/x86_64/libepic.so", Utils.readBytes(assets.open("epic/x86_64/libepic.so")));
+                            Utils.writeEntry(zip, "lib/arm64-v8a/libsandhook.so", Utils.readBytes(assets.open("sandhook/arm64-v8a/libsandhook.so")));
+                            Utils.writeEntry(zip, "lib/arm64-v8a/libsandhook-native.so", Utils.readBytes(assets.open("sandhook/arm64-v8a/libsandhook-native.so")));
+                            Utils.writeEntry(zip, "lib/armeabi-v7a/libsandhook.so", Utils.readBytes(assets.open("sandhook/armeabi-v7a/libsandhook.so")));
+                            Utils.writeEntry(zip, "lib/armeabi-v7a/libsandhook-native.so", Utils.readBytes(assets.open("sandhook/armeabi-v7a/libsandhook-native.so")));
 
-
-                            Utils.writeEntry(zip, "classes8.dex", Utils.readBytes(assets.open("kotlin/classes.dex")));
+                            Utils.writeEntry(zip, "classes10.dex", Utils.readBytes(assets.open("kotlin/classes.dex")));
                             zip.close();
 
                             if (methodCall.argument("replaceBg") != Boolean.FALSE) {
