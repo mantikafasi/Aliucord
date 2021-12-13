@@ -35,10 +35,14 @@ import com.discord.api.user.User
 import com.discord.app.AppActivity
 import com.discord.app.AppComponent
 import com.discord.models.commands.ApplicationCommandOption
+import com.discord.models.domain.NonceGenerator
 import com.discord.nullserializable.NullSerializable
+import com.discord.restapi.RestAPIParams
+import com.discord.restapi.RestAPIParams.Message.AllowedMentions
 import com.discord.stores.StoreStream
 import com.discord.utilities.SnowflakeUtils
 import com.discord.utilities.fcm.NotificationClient
+import com.discord.utilities.time.ClockFactory
 import com.discord.views.CheckedSetting
 import com.discord.widgets.chat.list.WidgetChatList
 import com.discord.widgets.chat.list.adapter.WidgetChatListAdapterItemAttachment
@@ -241,6 +245,24 @@ Consider installing the MiXplorer file manager, or navigate to $path manually us
     @JvmStatic
     fun openPage(context: Context, clazz: Class<out AppComponent>) {
         openPage(context, clazz, null)
+    }
+
+    @JvmStatic
+    fun createMessage(message: String): RestAPIParams.Message {
+        return RestAPIParams.Message(
+            message,
+            NonceGenerator.computeNonce(ClockFactory.get()).toString(),  // Nonce
+            null,  // ApplicationId
+            null,  // Activity
+            emptyList(),  // stickerIds
+            null,  // messageReference
+            AllowedMentions( // https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mentions-structure
+                emptyList(),  // parse
+                emptyList(),  //users
+                emptyList(),  // roles
+                false // repliedUser
+            ), null
+        )
     }
 
     @JvmStatic
