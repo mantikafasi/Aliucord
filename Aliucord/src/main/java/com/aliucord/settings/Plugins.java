@@ -268,6 +268,7 @@ public class Plugins extends SettingsPage {
     @SuppressLint("SetTextI18n")
     public void onViewBound(View view) {
         super.onViewBound(view);
+        fuckScrollView();
         setActionBarTitle("Plugins");
         setActionBarSubtitle(PluginManager.plugins.size() + " Installed");
 
