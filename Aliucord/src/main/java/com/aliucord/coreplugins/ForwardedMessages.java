@@ -23,6 +23,7 @@ import com.discord.utilities.color.ColorCompat;
 import com.discord.widgets.chat.list.actions.WidgetChatListActions;
 import com.discord.widgets.chat.list.adapter.WidgetChatListAdapterItemMessage;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 public class ForwardedMessages extends CorePlugin {
@@ -34,18 +35,25 @@ public class ForwardedMessages extends CorePlugin {
     @Override
     public void start(Context context) throws Throwable {
 
-        patcher.patch(com.discord.models.message.Message.class.getDeclaredConstructor(Message.class), new Hook(callFrame -> {
+        Field snapshotsFieldApiMessage = Message.class.getField("messageSnapshots");
+        Field snapshotsFieldModelMessage = com.discord.models.message.Message.class.getField("messageSnapshots");
+
+        Class messageSnapshotClass = Class.forName("com.discord.api.message.MessageSnapshot");
+
+        Field messageField = messageSnapshotClass.getField("message");
+
+        patcher.patch(com.discord.models.message.Message.class.getDeclaredConstructor(Message.class), new Hook(cf -> {
             try {
-                var snapshots = (ArrayList) ReflectUtils.getField(callFrame.args[0], "messageSnapshots");
+                var snapshots = (ArrayList) snapshotsFieldApiMessage.get(cf.args[0]);
 
                 if (snapshots == null || snapshots.isEmpty()) return;
 
-                Message messageSnapshot = (Message) ReflectUtils.getField(snapshots.get(0), "message");
+                Message messageSnapshot = (Message) messageField.get(snapshots.get(0));
 
-                ReflectUtils.setField(callFrame.thisObject, "messageSnapshots", snapshots);
-                ReflectUtils.setField(callFrame.thisObject, "attachments", messageSnapshot.d());
-                ReflectUtils.setField(callFrame.thisObject, "embeds", messageSnapshot.k());
-                ReflectUtils.setField(callFrame.thisObject, "content", messageSnapshot.i());
+                ReflectUtils.setField(cf.thisObject, "messageSnapshots", snapshots);
+                ReflectUtils.setField(cf.thisObject, "attachments", messageSnapshot.d());
+                ReflectUtils.setField(cf.thisObject, "embeds", messageSnapshot.k());
+                ReflectUtils.setField(cf.thisObject, "content", messageSnapshot.i());
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 logger.error(e);
             }
@@ -53,8 +61,10 @@ public class ForwardedMessages extends CorePlugin {
 
         patcher.patch(WidgetChatListAdapterItemMessage.class.getDeclaredMethod("configureItemTag", com.discord.models.message.Message.class, boolean.class), new PreHook((cf) -> {
             try {
-                var snapshots = (ArrayList<Object>) ReflectUtils.getField(cf.args[0], "messageSnapshots");
+                var snapshots = (ArrayList) snapshotsFieldModelMessage.get(cf.args[0]);
+
                 if (snapshots == null || snapshots.isEmpty()) return;
+
                 var tw = (TextView) ReflectUtils.getField(cf.thisObject, "itemTag");
                 if (tw == null) return;
                 tw.setVisibility(View.VISIBLE);
