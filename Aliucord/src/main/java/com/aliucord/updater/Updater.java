@@ -52,7 +52,7 @@ public class Updater {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private static boolean fetchAliucordData() {
-        try (var req = new Http.Request("https://raw.githubusercontent.com/Aliucord/Aliucord/builds/data.json")) {
+        try (var req = new Http.Request("https://raw.githubusercontent.com/mantikafasi/Aliucord/builds/data.json")) {
             var res = req.execute().json(AliucordData.class);
             isAliucordOutdated = isOutdated("Aliucord", BuildConfig.VERSION, res.coreVersion);
             isDiscordOutdated = Constants.DISCORD_VERSION < res.versionCode;
