@@ -1,7 +1,7 @@
 import com.android.build.gradle.LibraryExtension
 import java.io.ByteArrayOutputStream
 
-version = "1.0.2"
+version = "1.1.0"
 
 // Make dependency configuration for build tools
 val buildTools: Configuration by configurations.creating
@@ -109,6 +109,7 @@ task("writePatches") {
             isIgnoreExitValue = true
             standardOutput = stdout
             errorOutput = System.err
+            workingDir = projectDir
             executable = "diff"
             args = listOf(
                 "--unified",
@@ -117,8 +118,8 @@ task("writePatches") {
                 "--recursive",
                 "--strip-trailing-cr",
                 "--show-function-line=.method",
-                smaliOriginalDir.toRelativeString(projectDir),
-                smaliDir.toRelativeString(projectDir),
+                "./" + smaliOriginalDir.toRelativeString(projectDir).replace('\\', '/'),
+                "./" + smaliDir.toRelativeString(projectDir).replace('\\', '/'),
             )
         }
 
@@ -127,6 +128,7 @@ task("writePatches") {
 
         val diffs = stdout
             .toString() // Convert bytes to string
+            .replace("\r\n", "\n") // Replace CRLF endings with LF
             .split("^diff --unified.+?\\R".toRegex(RegexOption.MULTILINE)) // Split by file diff header
             .filter(String::isNotBlank)
 
@@ -165,6 +167,7 @@ task<JavaExec>("disassembleInternal") {
         smaliOriginalDir.exists()
     }
 
+    systemProperty("line.separator", "\n") // Ensure smali output uses LF endings
     mainClass.set("com.android.tools.smali.baksmali.Main")
     args = listOf(
         "disassemble",
