@@ -39,7 +39,6 @@ internal class WidgetChatListAdapterItemForwardSource(
 ) {
     private val sourceIconId = View.generateViewId()
 
-
     private val content: TextView = itemView.findViewById(Utils.getResId("chat_list_adapter_item_text", "id"))
     private val gutter: View = itemView.findViewById(Utils.getResId("chat_list_adapter_item_gutter_bg", "id")) // Just used to style mentions, we hide it
     private val sourceIcon = SimpleDraweeView(itemView.context).apply {
