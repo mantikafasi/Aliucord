@@ -75,6 +75,7 @@ internal class UploadSize : CorePlugin(Manifest("UploadSize")) {
 
         patcher.instead<PremiumUtils>("getMaxFileSizeMB", User::class.java) { (_, user: User) ->
             when (user.premiumTier!!) {
+                PremiumTier.TIER_0 -> 50 // Nitro Basic
                 PremiumTier.TIER_1 -> 50 // Nitro Classic
                 PremiumTier.TIER_2 -> 500 // Nitro
                 else -> DEFAULT_MAX_FILE_SIZE
@@ -108,7 +109,6 @@ internal class UploadSize : CorePlugin(Manifest("UploadSize")) {
 
             XposedBridge.invokeOriginalMethod(it.method, it.thisObject, it.args)
 
-            @Suppress("SetTextI18n")
             g().j.text = "Max file size is $maxFileSize MB"
 
             null

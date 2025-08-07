@@ -1,40 +1,47 @@
 /*
  * This file is part of Aliucord, an Android Discord client mod.
- * Copyright (c) 2021 Juby210 & Vendicated
+ * Copyright (c) 2025 Juby210 & Vendicated
  * Licensed under the Open Software License version 3.0
  */
 
-package com.aliucord;
+package com.aliucord
 
-import android.content.Context;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
+import android.content.Context
+import android.content.res.AssetManager
+import android.content.res.Resources
+import com.aliucord.Utils.appContext
+import com.aliucord.coreplugins.*
+import com.aliucord.coreplugins.badges.SupporterBadges
+import com.aliucord.coreplugins.plugindownloader.PluginDownloader
+import com.aliucord.coreplugins.rn.RNAPI
+import com.aliucord.entities.CorePlugin
+import com.aliucord.entities.Plugin
+import com.aliucord.patcher.Patcher
+import com.aliucord.patcher.PreHook
+import com.aliucord.utils.GsonUtils.fromJson
+import com.aliucord.utils.GsonUtils.gson
+import com.aliucord.utils.MapUtils
+import com.aliucord.utils.ReflectUtils
+import dalvik.system.PathClassLoader
+import java.io.File
+import java.io.InputStreamReader
+import kotlin.system.measureTimeMillis
 
-import com.aliucord.coreplugins.badges.SupporterBadges;
-import com.aliucord.coreplugins.plugindownloader.PluginDownloader;
-import com.aliucord.coreplugins.rn.RNAPI;
-import com.aliucord.entities.CorePlugin;
-import com.aliucord.entities.Plugin;
-import com.aliucord.patcher.Patcher;
-import com.aliucord.patcher.PreHook;
-import com.aliucord.coreplugins.*;
-import com.aliucord.utils.*;
+/** Aliucord's Plugin Manager  */
+object PluginManager {
+    /** Map containing all loaded plugins  */
+    @JvmField
+    val plugins: MutableMap<String, Plugin> = LinkedHashMap()
 
-import java.io.File;
-import java.io.InputStreamReader;
-import java.lang.reflect.Method;
-import java.util.*;
+    @JvmField
+    val classLoaders: MutableMap<PathClassLoader, Plugin> = HashMap()
 
-import dalvik.system.PathClassLoader;
+    @JvmField
+    val logger = Logger("PluginManager")
 
-/** Aliucord's Plugin Manager */
-public class PluginManager {
-    /** Map containing all loaded plugins */
-    public static final Map<String, Plugin> plugins = new LinkedHashMap<>();
-    public static final Map<PathClassLoader, Plugin> classLoaders = new HashMap<>();
-    public static final Logger logger = new Logger("PluginManager");
-    /** Plugins that failed to load for various reasons. Map of file to String or Exception */
-    public static final Map<File, Object> failedToLoad = new LinkedHashMap<>();
+    /** Plugins that failed to load for various reasons. Map of file to String or Exception  */
+    @JvmField
+    val failedToLoad: MutableMap<File, Any> = LinkedHashMap()
 
     /**
      * Loads a plugin
@@ -42,60 +49,58 @@ public class PluginManager {
      * @param context Context
      * @param file    Plugin file
      */
-    @SuppressWarnings({ "JavaReflectionMemberAccess", "unchecked" })
-    public static void loadPlugin(Context context, File file) {
-        String fileName = file.getName().replace(".zip", "");
-        logger.info("Loading plugin: " + fileName);
+    @JvmStatic
+    @Suppress("UNCHECKED_CAST")
+    fun loadPlugin(context: Context, file: File) {
+        val fileName = file.name.replace(".zip", "")
+        logger.info("Loading plugin: $fileName")
         try {
-            var loader = new PathClassLoader(file.getAbsolutePath(), context.getClassLoader());
-
-            Plugin.Manifest manifest;
-
-            try (var stream = loader.getResourceAsStream("manifest.json")) {
+            val loader = PathClassLoader(file.absolutePath, context.classLoader)
+            val manifest = loader.getResourceAsStream("manifest.json").use { stream ->
                 if (stream == null) {
-                    failedToLoad.put(file, "No manifest found");
-                    logger.error("Failed to load plugin " + fileName + ": No manifest found", null);
-                    return;
+                    failedToLoad[file] = "No manifest found"
+                    logger.error("Failed to load plugin $fileName: No manifest found", null)
+                    return
                 }
 
-                try (var reader = new InputStreamReader(stream)) {
-                    manifest = GsonUtils.fromJson(GsonUtils.getGson(), reader, Plugin.Manifest.class);
+                InputStreamReader(stream).use {
+                    gson.fromJson(it, Plugin.Manifest::class.java)
                 }
             }
+            val name = manifest.name
+            val pluginClass = loader.loadClass(manifest.pluginClassName) as Class<out Plugin>
 
-            var name = manifest.name;
-
-            var pluginClass = (Class<? extends Plugin>) loader.loadClass(manifest.pluginClassName);
-
-            Patcher.addPatch(pluginClass.getDeclaredConstructor(), new PreHook(param -> {
-                var plugin = (Plugin) param.thisObject;
+            Patcher.addPatch(pluginClass.getDeclaredConstructor(), PreHook {
                 try {
-                    ReflectUtils.setField(Plugin.class, plugin, "manifest", manifest);
-                } catch (Exception e) {
-                    logger.errorToast("Failed to set manifest for " + manifest.name);
+                    ReflectUtils.setField(Plugin::class.java, it.thisObject, "manifest", manifest)
+                } catch (_: Exception) {
+                    logger.errorToast("Failed to set manifest for " + manifest.name)
                 }
-            }));
+            })
 
-            var pluginInstance = pluginClass.newInstance();
+            val pluginInstance = pluginClass.newInstance()
             if (plugins.containsKey(name)) {
-                logger.error("Plugin with name " + name + " already exists", null);
-                return;
+                logger.error("Plugin with name $name already exists", null)
+                return
             }
 
-            pluginInstance.__filename = fileName;
-            if (pluginInstance.needsResources) {
-                // based on https://stackoverflow.com/questions/7483568/dynamic-resource-loading-from-other-apk
-                AssetManager assets = AssetManager.class.newInstance();
-                Method addAssetPath = AssetManager.class.getMethod("addAssetPath", String.class);
-                addAssetPath.invoke(assets, file.getAbsolutePath());
-                pluginInstance.resources = new Resources(assets, context.getResources().getDisplayMetrics(), context.getResources().getConfiguration());
+            pluginInstance.__filename = fileName
+            if (pluginInstance.needsResources) { // based on https://stackoverflow.com/questions/7483568/dynamic-resource-loading-from-other-apk
+                val assetManager = AssetManager::class.java
+                val assets = assetManager.newInstance()
+                assetManager.getMethod("addAssetPath", String::class.java)(assets, file.absolutePath)
+                with(context.resources) {
+                    @Suppress("DEPRECATION")
+                    pluginInstance.resources = Resources(assets, displayMetrics, configuration)
+                }
             }
-            plugins.put(name, pluginInstance);
-            classLoaders.put(loader, pluginInstance);
-            pluginInstance.load(context);
-        } catch (Throwable e) {
-            failedToLoad.put(file, e);
-            logger.error("Failed to load plugin " + fileName + ":\n", e);
+
+            plugins[name] = pluginInstance
+            classLoaders[loader] = pluginInstance
+            pluginInstance.load(context)
+        } catch (e: Throwable) {
+            failedToLoad[file] = e
+            logger.error("Failed to load plugin $fileName:\n", e)
         }
     }
 
@@ -104,18 +109,19 @@ public class PluginManager {
      *
      * @param name Name of the plugin to unload
      */
-    public static void unloadPlugin(String name) {
-        logger.info("Unloading plugin: " + name);
-        var plugin = plugins.get(name);
+    @JvmStatic
+    fun unloadPlugin(name: String) {
+        val plugin = plugins[name] ?: return
+        logger.info("Unloading plugin: $name")
 
-        if (plugin instanceof CorePlugin) {
-            throw new IllegalArgumentException("Cannot unload coreplugin " + name);
+        require(plugin !is CorePlugin) { "Cannot unload coreplugin $name" }
+
+        try {
+            plugin.unload(appContext)
+            plugins.remove(name)
+        } catch (e: Throwable) {
+            logger.error("Exception while unloading plugin: $name", e)
         }
-
-        if (plugin != null) try {
-            plugin.unload(Utils.getAppContext());
-            plugins.remove(name);
-        } catch (Throwable e) { logger.error("Exception while unloading plugin: " + name, e); }
     }
 
     /**
@@ -123,12 +129,15 @@ public class PluginManager {
      *
      * @param name Name of the plugin to enable
      */
-    public static void enablePlugin(String name) {
-        if (isPluginEnabled(name)) return;
-        Main.settings.setBool(getPluginPrefKey(name), true);
+    @JvmStatic
+    fun enablePlugin(name: String) {
+        if (isPluginEnabled(name)) return
+        Main.settings.setBool(getPluginPrefKey(name), true)
         try {
-            startPlugin(name);
-        } catch (Throwable e) { logger.error("Exception while starting plugin: " + name, e); }
+            startPlugin(name)
+        } catch (e: Throwable) {
+            logger.error("Exception while starting plugin: $name", e)
+        }
     }
 
     /**
@@ -136,12 +145,15 @@ public class PluginManager {
      *
      * @param name Name of the plugin to disable
      */
-    public static void disablePlugin(String name) {
-        if (!isPluginEnabled(name)) return;
-        Main.settings.setBool(getPluginPrefKey(name), false);
+    @JvmStatic
+    fun disablePlugin(name: String) {
+        if (!isPluginEnabled(name)) return
+        Main.settings.setBool(getPluginPrefKey(name), false)
         try {
-            stopPlugin(name);
-        } catch (Throwable e) { logger.error("Exception while stopping plugin: " + name, e); }
+            stopPlugin(name)
+        } catch (e: Throwable) {
+            logger.error("Exception while stopping plugin: $name", e)
+        }
     }
 
     /**
@@ -149,9 +161,10 @@ public class PluginManager {
      *
      * @param name Name of the plugin to toggle
      */
-    public static void togglePlugin(String name) {
-        if (isPluginEnabled(name)) disablePlugin(name);
-        else enablePlugin(name);
+    @JvmStatic
+    fun togglePlugin(name: String) {
+        if (isPluginEnabled(name)) disablePlugin(name)
+        else enablePlugin(name)
     }
 
     /**
@@ -159,16 +172,18 @@ public class PluginManager {
      *
      * @param name Name of the plugin to start
      */
-    public static void startPlugin(String name) {
-        logger.info("Starting plugin: " + name);
+    @JvmStatic
+    fun startPlugin(name: String) {
+        logger.info("Starting plugin: $name")
+
         try {
-            long startTime = System.currentTimeMillis();
-
-            Objects.requireNonNull(plugins.get(name)).start(Utils.getAppContext());
-
-            logger.info("Started plugin: " + name + " in " + (System.currentTimeMillis() - startTime) + " milliseconds");
-
-        } catch (Throwable e) { logger.error("Exception while starting plugin: " + name, e); }
+            val millis = measureTimeMillis {
+                plugins[name]!!.start(appContext)
+            }
+            logger.info("Started plugin: $name in $millis milliseconds")
+        } catch (e: Throwable) {
+            logger.error("Exception while starting plugin: $name", e)
+        }
     }
 
     /**
@@ -176,17 +191,17 @@ public class PluginManager {
      *
      * @param name Name of the plugin to stop
      */
-    public static void stopPlugin(String name) {
-        logger.info("Stopping plugin: " + name);
+    @JvmStatic
+    fun stopPlugin(name: String) {
+        logger.info("Stopping plugin: $name")
         try {
-            Plugin p = plugins.get(name);
-
-            if (p instanceof CorePlugin && ((CorePlugin) p).isRequired()) {
-                throw new IllegalArgumentException("Cannot stop required coreplugin " + name);
+            plugins[name].let { p ->
+                require(!(p is CorePlugin && p.isRequired)) { "Cannot stop required coreplugin $name" }
+                p!!.stop(appContext)
             }
-
-            Objects.requireNonNull(p).stop(Utils.getAppContext());
-        } catch (Throwable e) { logger.error("Exception while stopping plugin " + name, e); }
+        } catch (e: Throwable) {
+            logger.error("Exception while stopping plugin $name", e)
+        }
     }
 
     /**
@@ -194,13 +209,14 @@ public class PluginManager {
      *
      * @param name Name of the plugin to remount
      */
-    public static void remountPlugin(String name) {
-        if (!plugins.containsKey(name)) throw new IllegalArgumentException("No such plugin: " + name);
-        if (!isPluginEnabled(name)) throw new IllegalArgumentException("Plugin not enabled: " + name);
-        stopPlugin(name);
-        unloadPlugin(name);
-        loadPlugin(Utils.getAppContext(), new File(Constants.PLUGINS_PATH, name + ".zip"));
-        startPlugin(name);
+    @JvmStatic
+    fun remountPlugin(name: String) {
+        require(name in plugins) { "No such plugin: $name" }
+        require(isPluginEnabled(name)) { "Plugin not enabled: $name" }
+        stopPlugin(name)
+        unloadPlugin(name)
+        loadPlugin(appContext, File(Constants.PLUGINS_PATH, "$name.zip"))
+        startPlugin(name)
     }
 
     /**
@@ -209,9 +225,8 @@ public class PluginManager {
      *
      * @param name Name of the plugin
      */
-    public static String getPluginPrefKey(String name) {
-        return "AC_PM_" + name;
-    }
+    @JvmStatic
+    fun getPluginPrefKey(name: String) = "AC_PM_$name"
 
     /**
      * Checks whether a plugin is enabled
@@ -219,11 +234,11 @@ public class PluginManager {
      * @param name Name of the plugin
      * @return Whether the plugin is enabled
      */
-    public static boolean isPluginEnabled(String name) {
-        Plugin p = plugins.get(name);
-        if (p instanceof CorePlugin && ((CorePlugin) p).isRequired()) return true;
+    @JvmStatic
+    fun isPluginEnabled(name: String): Boolean {
+        plugins[name].let { p -> if (p is CorePlugin && p.isRequired) return true }
 
-        return Main.settings.getBool(getPluginPrefKey(name), true);
+        return Main.settings.getBool(getPluginPrefKey(name), true)
     }
 
     /**
@@ -232,51 +247,69 @@ public class PluginManager {
      * @param plugin Plugin
      * @return Whether the plugin is enabled
      */
-    @SuppressWarnings("unused")
-    public static boolean isPluginEnabled(Plugin plugin) {
-        return isPluginEnabled(MapUtils.getMapKey(plugins, plugin));
+    @JvmStatic
+    @Suppress("unused")
+    fun isPluginEnabled(plugin: Plugin) = isPluginEnabled(MapUtils.getMapKey(plugins, plugin)!!)
+
+    /** Gets only plugins that should be visible to user */
+    @JvmStatic
+    fun getVisiblePlugins() = plugins.filter { (_, p) -> p !is CorePlugin || !p.isHidden }
+
+    /** Gets a formatted string with info about installed and enabled plugins */
+    @JvmStatic
+    fun getPluginsInfo(): String {
+        val visiblePlugins = getVisiblePlugins()
+        val core = visiblePlugins.filter { (_, p) -> p is CorePlugin }
+        val installed = plugins.size
+        val installedCore = core.size
+        val enabled = visiblePlugins.filterKeys { isPluginEnabled(it) }.size
+        val enabledCore = core.filterKeys { isPluginEnabled(it) }.size
+        return "$installed Installed ($installedCore core) | $enabled Enabled ($enabledCore core)"
     }
 
-    static void loadCorePlugins(Context context) {
-        CorePlugin[] corePlugins = {
-            new ButtonsAPI(),
-            new CommandHandler(),
-            new CoreCommands(),
-            new DefaultStickers(),
-            new ExperimentDefaults(),
-            new ForwardedMessages(),
-            new GifPreviewFix(),
-            new MembersListFix(),
-            new NoTrack(),
-            new PluginDownloader(),
-            new PrivateChannelsListScroll(),
-            new PrivateThreads(),
-            new RNAPI(),
-            new Pronouns(),
-            new StickerCrashFix(),
-            new SupportWarn(),
-            new SupporterBadges(),
-            new TokenLogin(),
-            new UploadSize(),
-            new ForwardedMessages(),
-        };
+    @JvmStatic
+    fun loadCorePlugins(context: Context) {
+        val corePlugins = arrayOf(
+            ButtonsAPI(),
+            CommandHandler(),
+            CoreCommands(),
+            DefaultStickers(),
+            ExperimentDefaults(),
+            ForwardedMessages(),
+            GifPreviewFix(),
+            MembersListFix(),
+            NoTrack(),
+            PluginDownloader(),
+            PrivateChannelsListScroll(),
+            PrivateThreads(),
+            RestartButton(),
+            RNAPI(),
+            Pronouns(),
+            ShowReplyMention(),
+            StickerCrashFix(),
+            SupportWarn(),
+            SupporterBadges(),
+            TokenLogin(),
+            UploadSize(),
+        )
 
-        for (Plugin p : corePlugins) {
-            logger.info("Loading coreplugin: " + p.getName());
+        corePlugins.forEach { p ->
+            logger.info("Loading coreplugin: ${p.name}")
             try {
-                plugins.put(p.getName(), p);
-                p.load(context);
-            } catch (Throwable e) {
-                logger.errorToast("Failed to load coreplugin " + p.getName(), e);
+                plugins[p.name] = p
+                p.load(context)
+            } catch (e: Throwable) {
+                logger.errorToast("Failed to load coreplugin ${p.name}", e)
             }
         }
     }
 
-    static void startCorePlugins() {
-        for (Plugin p : plugins.values()) {
-            if (!(p instanceof CorePlugin)) continue;
-            if (!isPluginEnabled(p.getName())) continue;
-            startPlugin(p.getName());
+    @JvmStatic
+    fun startCorePlugins() {
+        for (p in plugins.values) {
+            if (p !is CorePlugin) continue
+            if (!isPluginEnabled(p.name)) continue
+            startPlugin(p.name)
         }
     }
 }
