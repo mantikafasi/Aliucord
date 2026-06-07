@@ -2,8 +2,8 @@
   "versionCode": "126021",
   "versionName": "126.21",
   "coreVersion": "2.9.4",
-  "injectorVersion": "2.3.2",
-  "patchesVersion": "1.4.0",
+  "injectorVersion": "2.3.3",
+  "patchesVersion": "1.4.1",
   "kotlinVersion": "1.5.21",
   "aliucordHash": "0000000"
 }
